@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<body style="margin:0; overflow:hidden; background:#87CEEB;">
+<canvas id="gameCanvas" width="400" height="400" style="background:#87CEEB; display:block; margin: 0 auto; border:2px solid #000;"></canvas>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+let player = { x: 50, y: 360, width: 30, height: 30, jumping: false, dy: 0 };
+let obstacle = { x: 400, y: 360, width: 30, height: 30, speed: 7 };
+let gameRunning = true;
+
+function jump() {
+    if (!player.jumping && gameRunning) {
+        player.jumping = true;
+        player.dy = -15;
+    }
+}
+
+window.addEventListener("keydown", (e) => { if (e.code === "Space") jump(); });
+canvas.addEventListener("mousedown", jump);
+
+function gameLoop() {
+    if (!gameRunning) return;
+    
+    ctx.clearRect(0, 0, 400, 400);
+
+    // Skok
+    if (player.jumping) {
+        player.y += player.dy;
+        player.dy += 0.8;
+        if (player.y >= 360) {
+            player.y = 360;
+            player.jumping = false;
+        }
+    }
+
+    // Prepreka
+    obstacle.x -= obstacle.speed;
+    if (obstacle.x + obstacle.width < 0) {
+        obstacle.x = 400;
+    }
+
+    // SUDAR
+    if (player.x < obstacle.x + obstacle.width &&
+        player.x + player.width > obstacle.x &&
+        player.y + player.height > obstacle.y) {
+        gameRunning = false;
+        alert("GAME OVER! Udario si.");
+    }
+
+    // Crtanje
+    ctx.fillStyle = "#333"; ctx.fillRect(0, 390, 400, 10);
+    ctx.fillStyle = "red"; ctx.fillRect(player.x, player.y, 30, 30);
+    ctx.fillStyle = "black"; ctx.fillRect(obstacle.x, obstacle.y, 30, 30);
+
+    requestAnimationFrame(gameLoop);
+}
+gameLoop();
+</script>
+</body>
+</html>
