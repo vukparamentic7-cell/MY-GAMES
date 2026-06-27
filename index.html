@@ -35,15 +35,21 @@
         }
 
         function update() {
+            // Gravitacija
             player.dy += 0.6;
             player.y += player.dy;
             if (player.y >= 360) { player.y = 360; player.jumping = false; }
             
+            // Pomeranje prepreke
             obstacle.x -= obstacle.speed;
             if (obstacle.x + obstacle.width < 0) obstacle.x = 400;
 
-            if (player.x < obstacle.x + obstacle.width && player.x + player.width > obstacle.x && player.y + player.height > obstacle.y) {
-                obstacle.x = 400;
+            // Provera udarca
+            if (player.x < obstacle.x + obstacle.width && 
+                player.x + player.width > obstacle.x && 
+                player.y + player.height > obstacle.y) {
+                alert("GAME OVER! Udario si u prepreku.");
+                obstacle.x = 400; // Resetuj prepreku
             }
         }
 
