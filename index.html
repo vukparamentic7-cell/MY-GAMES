@@ -1,63 +1,68 @@
 <!DOCTYPE html>
 <html>
-<body style="margin:0; overflow:hidden; background:#87CEEB;">
-<canvas id="gameCanvas" width="400" height="400" style="background:#87CEEB; display:block; margin: 0 auto; border:2px solid #000;"></canvas>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Moja Igrica</title>
+    <style>
+        body { margin: 0; display: flex; flex-direction: column; align-items: center; background: #333; font-family: sans-serif; }
+        canvas { border: 2px solid white; background: #eee; margin-top: 20px; }
+        .controls { margin-top: 10px; display: flex; gap: 10px; }
+        button { padding: 15px 30px; font-size: 18px; cursor: pointer; }
+    </style>
+</head>
+<body>
 
-<script>
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
 
-let player = { x: 50, y: 360, width: 30, height: 30, jumping: false, dy: 0 };
-let obstacle = { x: 400, y: 360, width: 30, height: 30, speed: 7 };
-let gameRunning = true;
+    <div class="controls">
+        <button onclick="jump()">SKOK</button>
+        <button onclick="goBack()">NAZAD</button>
+        <button onclick="goFullScreen()">FULL SCREEN</button>
+    </div>
 
-function jump() {
-    if (!player.jumping && gameRunning) {
-        player.jumping = true;
-        player.dy = -15;
-    }
-}
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
 
-window.addEventListener("keydown", (e) => { if (e.code === "Space") jump(); });
-canvas.addEventListener("mousedown", jump);
+        let player = { x: 50, y: 360, width: 30, height: 30, dy: 0, jumping: false };
+        let obstacle = { x: 400, y: 360, width: 30, height: 30, speed: 5 };
 
-function gameLoop() {
-    if (!gameRunning) return;
-    
-    ctx.clearRect(0, 0, 400, 400);
-
-    // Skok
-    if (player.jumping) {
-        player.y += player.dy;
-        player.dy += 0.8;
-        if (player.y >= 360) {
-            player.y = 360;
-            player.jumping = false;
+        function jump() {
+            if (!player.jumping) {
+                player.dy = -12;
+                player.jumping = true;
+            }
         }
-    }
 
-    // Prepreka
-    obstacle.x -= obstacle.speed;
-    if (obstacle.x + obstacle.width < 0) {
-        obstacle.x = 400;
-    }
+        function goBack() {
+            window.history.back(); // Vraća na prethodnu stranicu
+        }
 
-    // SUDAR
-    if (player.x < obstacle.x + obstacle.width &&
-        player.x + player.width > obstacle.x &&
-        player.y + player.height > obstacle.y) {
-        gameRunning = false;
-        alert("GAME OVER! Udario si.");
-    }
+        function goFullScreen() {
+            if (canvas.requestFullscreen) { canvas.requestFullscreen(); }
+        }
 
-    // Crtanje
-    ctx.fillStyle = "#333"; ctx.fillRect(0, 390, 400, 10);
-    ctx.fillStyle = "red"; ctx.fillRect(player.x, player.y, 30, 30);
-    ctx.fillStyle = "black"; ctx.fillRect(obstacle.x, obstacle.y, 30, 30);
+        function update() {
+            player.dy += 0.6;
+            player.y += player.dy;
+            if (player.y >= 360) { player.y = 360; player.jumping = false; }
+            obstacle.x -= obstacle.speed;
+            if (obstacle.x + obstacle.width < 0) obstacle.x = 400;
+            if (player.x < obstacle.x + obstacle.width && player.x + player.width > obstacle.x && player.y + player.height > obstacle.y) {
+                obstacle.x = 400;
+            }
+        }
 
-    requestAnimationFrame(gameLoop);
-}
-gameLoop();
-</script>
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "blue";
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+            ctx.fillStyle = "red";
+            ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+        }
+
+        function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
+        gameLoop();
+    </script>
 </body>
 </html>
