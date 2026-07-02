@@ -1,97 +1,23 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Jumper Block</title>
-    <style>
-        body { margin: 0; display: flex; flex-direction: column; align-items: center; background: #333; font-family: sans-serif; touch-action: none; }
-        canvas { border: 4px solid #000; background: #87CEEB; margin-top: 20px; width: 90vw; max-width: 400px; height: auto; cursor: pointer; }
-        .controls { margin-top: 20px; }
-        button { padding: 15px 30px; font-size: 20px; cursor: pointer; border-radius: 10px; border: none; background: #4CAF50; color: white; }
-    </style>
-</head>
-<body>
-    <canvas id="gameCanvas" width="400" height="400"></canvas>
-    <div class="controls"><button id="actionBtn" onclick="handleAction()">START</button></div>
+// ... (ostali kod ostaje isti)
 
-    <script>
-        const canvas = document.getElementById("gameCanvas");
-        const ctx = canvas.getContext("2d");
-        const btn = document.getElementById("actionBtn");
+// IGRAČ I OČI
+ctx.fillStyle = "blue";
+ctx.fillRect(player.x, player.y, player.width, player.height);
 
-        // Malo smanjen hitbox igrača da te ne ubija "usred skoka"
-        let player = { x: 50, y: 360, width: 25, height: 25, dy: 0, jumping: false };
-        
-        // Ekstremno odaljene prepreke (počinju tek na 1000px i 2000px)
-        let obstacles = [
-            { x: 1000, y: 360, width: 30, height: 30, type: 'block' },
-            { x: 2000, y: 380, width: 20, height: 20, type: 'spike' }
-        ];
-        
-        let gameSpeed = 5, score = 0, gameActive = false, gameOver = false;
+// Treptanje: crtamo oči samo ako ostatak deljenja brojača sa 100 nije 0
+// (Treptaće brzo i kratko)
+let eyeBlinkTimer = Math.floor(Date.now() / 200) % 15; 
+if (eyeBlinkTimer !== 0) { 
+    ctx.fillStyle = "white";
+    // Levo oko
+    ctx.fillRect(player.x + 5, player.y + 5, 6, 6);
+    // Desno oko
+    ctx.fillRect(player.x + 14, player.y + 5, 6, 6);
+    
+    // Zenice
+    ctx.fillStyle = "black";
+    ctx.fillRect(player.x + 7, player.y + 7, 2, 2);
+    ctx.fillRect(player.x + 16, player.y + 7, 2, 2);
+}
 
-        function handleAction() {
-            if (gameOver) {
-                gameActive = true; gameOver = false; score = 0; gameSpeed = 5;
-                player.y = 360;
-                obstacles = [{ x: 1000, y: 360, width: 30, height: 30, type: 'block' }, { x: 2000, y: 380, width: 20, height: 20, type: 'spike' }];
-                btn.innerText = "SKOK";
-            } else if (!gameActive) {
-                gameActive = true; btn.innerText = "SKOK";
-            } else if (!player.jumping) {
-                player.dy = -12; player.jumping = true;
-            }
-        }
-
-        canvas.addEventListener("mousedown", handleAction);
-        canvas.addEventListener("touchstart", (e) => { e.preventDefault(); handleAction(); });
-
-        function update() {
-            if (!gameActive || gameOver) return;
-            
-            player.dy += 0.6; player.y += player.dy;
-            if (player.y >= 360) { player.y = 360; player.jumping = false; player.dy = 0; }
-
-            obstacles.forEach(obs => {
-                obs.x -= gameSpeed;
-                
-                // Kada prođe, vraća se na ogromnu daljinu (1000px do 1500px razmaka)
-                if (obs.x + obs.width < 0) { 
-                    obs.x = 1000 + Math.random() * 500; 
-                    score++; 
-                    gameSpeed += 0.2; // Brzina raste polako do beskonacnosti
-                }
-                
-                // Oproštajnija kolizija (smanjen prostor za dodir)
-                if (player.x < obs.x + obs.width - 5 && player.x + player.width > obs.x + 5 && 
-                    player.y + player.height > obs.y + 5 && player.y < obs.y + obs.height - 5) {
-                    gameOver = true; gameActive = false; btn.innerText = "RESTART";
-                }
-            });
-        }
-
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            // Pozadina
-            ctx.fillStyle = "#555"; ctx.fillRect(0, 390, 400, 5);
-
-            if (gameOver) {
-                ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fillRect(0, 0, 400, 400);
-                ctx.fillStyle = "white"; ctx.font = "40px Arial"; ctx.fillText("GAME OVER", 85, 180);
-                ctx.font = "25px Arial"; ctx.fillText("Score: " + score, 155, 230);
-            } else if (!gameActive) {
-                ctx.fillStyle = "black"; ctx.font = "40px Arial"; ctx.fillText("Jumper Block", 80, 200);
-            } else {
-                ctx.fillStyle = "blue"; ctx.fillRect(player.x, player.y, player.width, player.height);
-                obstacles.forEach(obs => {
-                    ctx.fillStyle = obs.type === 'block' ? "red" : "black";
-                    ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
-                });
-                ctx.fillStyle = "black"; ctx.font = "20px Arial"; ctx.fillText("Score: " + score, 10, 30);
-            }
-        }
-        function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
-        gameLoop();
-    </script>
-</body>
-</html>
+// ... (ostatak koda)
