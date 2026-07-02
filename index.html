@@ -2,18 +2,43 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Jumper Block</title>
+    <title>Jumper Block - Flappy Edition</title>
     <style>
-        body { margin: 0; display: flex; flex-direction: column; align-items: center; background: #333; font-family: sans-serif; touch-action: manipulation; }
-        canvas { border: 4px solid #000; background: #87CEEB; margin-top: 20px; width: 90vw; max-width: 400px; height: auto; }
-        .controls { margin-top: 20px; display: flex; gap: 10px; }
-        button { padding: 15px 25px; font-size: 18px; cursor: pointer; border-radius: 10px; border: none; background: #4CAF50; color: white; }
+        body {
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #333;
+            font-family: sans-serif;
+            touch-action: manipulation;
+        }
+        canvas {
+            border: 4px solid #000;
+            background: #87CEEB;
+            margin-top: 20px;
+            width: 90vw;
+            max-width: 400px;
+            height: auto;
+        }
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            padding: 15px 25px;
+            font-size: 18px;
+            cursor: pointer;
+            border-radius: 10px;
+            border: none;
+            background: #4CAF50;
+            color: white;
+        }
     </style>
 </head>
 <body>
-
     <canvas id="gameCanvas" width="400" height="400"></canvas>
-
     <div class="controls">
         <button onclick="jump()">SKOK</button>
         <button onclick="window.history.back()">NAZAD</button>
@@ -27,27 +52,62 @@
         let player = { x: 50, y: 360, width: 30, height: 30, dy: 0, jumping: false };
         let obstacle = { x: 400, y: 360, width: 30, height: 30, speed: 5 };
         
+        // Dodajemo varijable za vreme, brzinu i oči
+        let gameTime = 0;
+        let speedIncreaseInterval = 120;
+        
+        // Varijable za oči
+        let eyeBlinkTimer = 0;
+        let eyesClosed = false;
+
         // Oblaci
         let clouds = [{ x: 50, y: 50 }, { x: 200, y: 80 }, { x: 350, y: 40 }];
 
         function jump() {
             if (!player.jumping) {
-                player.dy = -12;
+                player.dy = -12; // Jači skok
                 player.jumping = true;
             }
         }
 
         function update() {
+            gameTime++;
+            eyeBlinkTimer++;
+
+            // Logika za automatsko ubrzavanje (zadržano)
+            if (gameTime % speedIncreaseInterval === 0) {
+                obstacle.speed += 0.5;
+            }
+
+            // Logika za treptanje
+            // Svakih 150 frejmova (oko 2.5 sekunde), oči se zatvore na 10 frejmova
+            if (eyeBlinkTimer % 150 === 0) {
+                eyesClosed = true;
+            }
+            if (eyeBlinkTimer % 150 === 10) {
+                eyesClosed = false;
+            }
+
+            // Gravitacija i pomeranje igrača
             player.dy += 0.6;
             player.y += player.dy;
-            if (player.y >= 360) { player.y = 360; player.jumping = false; }
-            
+
+            if (player.y >= 360) {
+                player.y = 360;
+                player.jumping = false;
+                player.dy = 0;
+            }
+
+            // Pomeranje prepreke
             obstacle.x -= obstacle.speed;
             if (obstacle.x + obstacle.width < 0) obstacle.x = 400;
 
+            // Kolizija
             if (player.x < obstacle.x + obstacle.width && player.x + player.width > obstacle.x && player.y + player.height > obstacle.y) {
                 alert("GAME OVER!");
                 obstacle.x = 400;
+                obstacle.speed = 5;
+                gameTime = 0;
             }
 
             // Pomeranje oblaka
@@ -59,7 +119,7 @@
 
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
+
             // Oblaci
             ctx.fillStyle = "white";
             clouds.forEach(c => {
@@ -73,17 +133,68 @@
             // Zemlja
             ctx.fillStyle = "#555";
             ctx.fillRect(0, 390, 400, 10);
-            
-            // Igrac
+
+            // Igrac (Plava kockica sa efektom)
+            // 1. Tragovi otpora (Air Resistance Trails) - crtamo samo ako igrač skače
+            if (player.jumping) {
+                ctx.strokeStyle = "white";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                // Crtamo 3 linije koje idu levo od igrača
+                for (let i = 0; i < 3; i++) {
+                    let yOffset = player.y + 10 + (i * 8); // malo pomerene po visini
+                    let xStart = player.x - (i * 15) - 10;
+                    let xEnd = player.x - (i * 15) - 5;
+                    ctx.moveTo(xStart, yOffset);
+                    ctx.lineTo(xEnd, yOffset);
+                }
+                ctx.stroke();
+            }
+
+            // 2. Telo kocke
             ctx.fillStyle = "blue";
             ctx.fillRect(player.x, player.y, player.width, player.height);
-            
+
+            // 3. Oci
+            if (!eyesClosed) {
+                // Otvorene oči
+                ctx.fillStyle = "white";
+                // Levo oko
+                ctx.fillRect(player.x + 5, player.y + 5, 8, 10);
+                // Desno oko
+                ctx.fillRect(player.x + 17, player.y + 5, 8, 10);
+                
+                // Zenice
+                ctx.fillStyle = "black";
+                // Zenica levo
+                ctx.fillRect(player.x + 8, player.y + 8, 3, 4);
+                // Zenica desno
+                ctx.fillRect(player.x + 20, player.y + 8, 3, 4);
+            } else {
+                // Zatvorene oči (samo linija)
+                ctx.strokeStyle = "black";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                // Linija levo
+                ctx.moveTo(player.x + 5, player.y + 10);
+                ctx.lineTo(player.x + 13, player.y + 10);
+                // Linija desno
+                ctx.moveTo(player.x + 17, player.y + 10);
+                ctx.lineTo(player.x + 25, player.y + 10);
+                ctx.stroke();
+            }
+
             // Prepreka
             ctx.fillStyle = "red";
             ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
         }
 
-        function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
         gameLoop();
     </script>
 </body>
