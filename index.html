@@ -20,36 +20,30 @@
         const btn = document.getElementById("actionBtn");
 
         let player = { x: 50, y: 360, width: 30, height: 30, dy: 0, jumping: false };
-        // Povećan početni razmak između prepreka
+        
+        // Povećan razmak: Sada su prepreke na mnogo većim udaljenostima
+        // Smanjen broj prepreka da bi igra bila opuštenija
         let obstacles = [
-            { x: 500, y: 360, width: 30, height: 30, type: 'block' },
-            { x: 900, y: 380, width: 20, height: 20, type: 'spike' },
-            { x: 1300, y: 300, width: 30, height: 100, type: 'tunnel' }
+            { x: 800, y: 360, width: 30, height: 30, type: 'block' },
+            { x: 1600, y: 380, width: 20, height: 20, type: 'spike' }
         ];
+        
         let clouds = [{ x: 50, y: 50, speed: 0.3 }, { x: 200, y: 80, speed: 0.5 }, { x: 350, y: 40, speed: 0.4 }];
-
         let gameSpeed = 5, score = 0, gameActive = false, gameOver = false;
 
         function handleAction() {
             if (gameOver) {
-                // POTPUNI RESTART
-                gameActive = true; 
-                gameOver = false; 
-                score = 0; 
-                gameSpeed = 5;
+                gameActive = true; gameOver = false; score = 0; gameSpeed = 5;
                 player.y = 360;
                 obstacles = [
-                    { x: 500, y: 360, width: 30, height: 30, type: 'block' },
-                    { x: 900, y: 380, width: 20, height: 20, type: 'spike' },
-                    { x: 1300, y: 300, width: 30, height: 100, type: 'tunnel' }
+                    { x: 800, y: 360, width: 30, height: 30, type: 'block' },
+                    { x: 1600, y: 380, width: 20, height: 20, type: 'spike' }
                 ];
                 btn.innerText = "SKOK";
             } else if (!gameActive) {
-                gameActive = true; 
-                btn.innerText = "SKOK";
+                gameActive = true; btn.innerText = "SKOK";
             } else if (!player.jumping) {
-                player.dy = -12; 
-                player.jumping = true;
+                player.dy = -12; player.jumping = true;
             }
         }
 
@@ -58,33 +52,28 @@
 
         function update() {
             if (!gameActive || gameOver) return;
-            
             clouds.forEach(c => { c.x -= c.speed; if (c.x < -100) { c.x = 450; c.y = Math.random() * 150; } });
-            player.dy += 0.6; 
-            player.y += player.dy;
+            player.dy += 0.6; player.y += player.dy;
             if (player.y >= 360) { player.y = 360; player.jumping = false; player.dy = 0; }
 
             obstacles.forEach(obs => {
                 obs.x -= gameSpeed;
-                // Kada prepreka ode van, postavi je sa većim razmakom (400px minimum)
+                // Vraćanje prepreka na još veću udaljenost (800px razmaka)
                 if (obs.x + obs.width < 0) { 
-                    obs.x = 1200 + Math.random() * 300; 
+                    obs.x = 1000 + Math.random() * 500; 
                     score++; 
                     gameSpeed = Math.min(10, 5 + Math.floor(score / 5)); 
                 }
                 
                 if (player.x < obs.x + obs.width && player.x + player.width > obs.x && 
                     player.y + player.height > obs.y && player.y < obs.y + obs.height) {
-                    gameOver = true; 
-                    gameActive = false; 
-                    btn.innerText = "RESTART";
+                    gameOver = true; gameActive = false; btn.innerText = "RESTART";
                 }
             });
         }
 
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            // Pozadina i oblaci...
             ctx.fillStyle = "yellow"; ctx.beginPath(); ctx.arc(350, 50, 30, 0, Math.PI * 2); ctx.fill();
             ctx.fillStyle = "white"; 
             clouds.forEach(c => {
@@ -104,7 +93,7 @@
             } else {
                 ctx.fillStyle = "blue"; ctx.fillRect(player.x, player.y, player.width, player.height);
                 obstacles.forEach(obs => {
-                    ctx.fillStyle = obs.type === 'block' ? "red" : (obs.type === 'spike' ? "black" : "darkred");
+                    ctx.fillStyle = obs.type === 'block' ? "red" : "black";
                     ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
                 });
                 ctx.fillStyle = "black"; ctx.font = "20px Arial"; ctx.fillText("Score: " + score, 10, 30);
