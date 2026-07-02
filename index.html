@@ -1,83 +1,20 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Jumper Block - Pro Version</title>
-    <style>
-        body { margin: 0; display: flex; flex-direction: column; align-items: center; background: #333; font-family: sans-serif; touch-action: manipulation; }
-        canvas { border: 4px solid #000; background: #87CEEB; margin-top: 20px; width: 90vw; max-width: 400px; height: auto; }
-        .controls { margin-top: 20px; display: flex; gap: 10px; }
-        button { padding: 15px 25px; font-size: 18px; cursor: pointer; border-radius: 10px; border: none; background: #4CAF50; color: white; }
-    </style>
-</head>
-<body>
-    <canvas id="gameCanvas" width="400" height="400"></canvas>
-    <div class="controls">
-        <button onclick="jump()">SKOK</button>
-    </div>
-
-    <script>
-        const canvas = document.getElementById("gameCanvas");
-        const ctx = canvas.getContext("2d");
-
-        let player = { x: 50, y: 360, width: 30, height: 30, dy: 0, jumping: false };
-        // Sada imamo niz prepreka: objekti koji mogu biti "block" ili "spike"
-        let obstacles = [
-            { x: 400, y: 360, width: 30, height: 30, type: 'block' },
-            { x: 600, y: 380, width: 20, height: 20, type: 'spike' } 
-        ];
-        let gameSpeed = 5;
-
-        function jump() {
-            if (!player.jumping) { player.dy = -12; player.jumping = true; }
-        }
-
-        function update() {
-            player.dy += 0.6;
-            player.y += player.dy;
-
-            if (player.y >= 360) { player.y = 360; player.jumping = false; player.dy = 0; }
-
-            obstacles.forEach(obs => {
-                obs.x -= gameSpeed;
-                if (obs.x + obs.width < 0) obs.x = 800; // Vraća na kraj ekrana
-
-                // Kolizija
-                if (player.x < obs.x + obs.width && player.x + player.width > obs.x && 
-                    player.y + player.height > obs.y) {
-                    alert("GAME OVER!");
-                    obs.x = 800;
-                }
-            });
-        }
-
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Zemlja
-            ctx.fillStyle = "#555"; ctx.fillRect(0, 390, 400, 10);
-
-            // Igrac
-            ctx.fillStyle = "blue"; ctx.fillRect(player.x, player.y, player.width, player.height);
-
-            // Crtanje prepreka
-            obstacles.forEach(obs => {
-                if (obs.type === 'block') {
-                    ctx.fillStyle = "red";
-                    ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
-                } else if (obs.type === 'spike') {
-                    ctx.fillStyle = "black";
-                    ctx.beginPath();
-                    ctx.moveTo(obs.x, obs.y + 20); // Dno levo
-                    ctx.lineTo(obs.x + 10, obs.y); // Vrh
-                    ctx.lineTo(obs.x + 20, obs.y + 20); // Dno desno
-                    ctx.fill();
-                }
-            });
-        }
-
-        function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
-        gameLoop();
-    </script>
-</body>
-</html>
+// Izmenjeni deo u funkciji update()
+obstacles.forEach(obs => {
+    obs.x -= gameSpeed;
+    
+    if (obs.x + obs.width < 0) {
+        obs.x = 800;
+        score++;
+        
+        // POSTAVLJAMO GRANICE BRZINE:
+        // Min brzina 4, Max brzina 10 (možeš menjati ove brojeve)
+        let minSpeed = 4;
+        let maxSpeed = 10;
+        
+        // Ova formula bira broj između 4 i 10
+        gameSpeed = Math.floor(Math.random() * (maxSpeed - minSpeed + 1)) + minSpeed;
+        
+        console.log("Poen: " + score + " | Trenutna brzina: " + gameSpeed);
+    }
+    // ... ostatak kolizije ostaje isti ...
+});
