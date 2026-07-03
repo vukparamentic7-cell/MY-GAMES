@@ -1,91 +1,63 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Jumper Block</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jumper Block - Pro Verzija</title>
     <style>
-        body { margin: 0; display: flex; flex-direction: column; align-items: center; background: #222; touch-action: none; color: white; font-family: sans-serif; }
-        canvas { background: #87CEEB; border: 4px solid #000; margin-top: 10px; width: 90vw; max-width: 400px; height: 400px; }
-        .menu { display: flex; gap: 10px; margin-top: 10px; }
-        button { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        body { margin: 0; display: flex; flex-direction: column; align-items: center; background: #222; color: white; font-family: sans-serif; }
+        #gameCanvas { background: linear-gradient(#87CEEB, #E0F7FA); border: 4px solid #000; margin-top: 10px; }
+        .controls { margin-top: 10px; display: flex; gap: 5px; }
+        button { padding: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
-    <div class="menu">
+    <div class="controls">
         <button onclick="player.color='blue'">PLAVI</button>
         <button onclick="player.color='red'">CRVENI</button>
         <button onclick="player.color='yellow'">ZUTI</button>
     </div>
     <canvas id="gameCanvas" width="400" height="400"></canvas>
-    <div class="menu"><button onclick="handleAction()" style="background:#4CAF50; color:white; padding:15px 40px;">START / SKOK</button></div>
+    <div class="controls"><button onclick="handleAction()" style="padding: 15px 40px; background: green; color: white;">START / SKOK</button></div>
 
     <script>
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
-        let player = { x: 50, y: 360, dy: 0, jumping: false, color: 'blue' };
-        let particles = [];
-        let mountains = [{x: 0, w: 100}, {x: 150, w: 120}, {x: 300, w: 80}];
-        let obstacles = [{x: 600, type: 'spike', color: 'black'}, {x: 1200, type: 'block', color: 'purple'}, {x: 1800, type: 'block', color: 'green'}];
-        let gameActive = false, gameOver = false, score = 0, gameSpeed = 5;
+        let player = { x: 50, y: 350, dy: 0, jumping: false, color: 'blue' };
+        let gameActive = false, obstacles = [{x: 400, type: 'block'}, {x: 700, type: 'spike'}];
+        let mountains = [{x: 0, w: 100}, {x: 200, w: 150}, {x: 350, w: 80}];
 
-        function handleAction() {
-            if (!gameActive || gameOver) { gameActive = true; gameOver = false; score = 0; gameSpeed = 5; obstacles.forEach((o, i) => o.x = 600 + i * 600); }
-            else if (!player.jumping) { player.dy = -12; player.jumping = true; }
-        }
-
-        function update() {
-            if (!gameActive || gameOver) return;
-            player.dy += 0.6; player.y += player.dy;
-            if (player.y >= 360) { player.y = 360; player.jumping = false; player.dy = 0; }
-            
-            mountains.forEach(m => { m.x -= 0.5; if(m.x < -150) m.x = 450; });
-            particles.push({x: player.x, y: player.y + 20, life: 10});
-            particles.forEach((p, i) => { p.x -= 2; p.life--; if(p.life <= 0) particles.splice(i, 1); });
-
-            obstacles.forEach(o => {
-                o.x -= gameSpeed;
-                if(o.x < -30) { o.x = 1200 + Math.random() * 400; score++; gameSpeed += 0.05; }
-                if(player.x < o.x + 25 && player.x + 25 > o.x && player.y + 25 > 365) gameOver = true;
-            });
-        }
+        function handleAction() { gameActive = true; if(!player.jumping) { player.dy = -12; player.jumping = true; } }
 
         function draw() {
             ctx.clearRect(0, 0, 400, 400);
             
-            // 1. Sunce
-            ctx.fillStyle = "#FFD700"; ctx.beginPath(); ctx.arc(350, 50, 30, 0, Math.PI*2); ctx.fill();
-            
-            // 2. Planine
-            ctx.fillStyle = "#4A7C59"; 
-            mountains.forEach(m => ctx.fillRect(m.x, 380 - (m.w/2), m.w, m.w/2));
-            
-            // 3. Tlo
-            ctx.fillStyle = "#2E7D32"; ctx.fillRect(0, 385, 400, 15);
-            
-            // 4. Čestice
-            ctx.fillStyle = "rgba(255,255,255,0.6)";
-            particles.forEach(p => ctx.fillRect(p.x, p.y, 4, 4));
-
-            // 5. Igrač
-            let stretch = player.jumping ? 1.2 : 1;
-            ctx.fillStyle = player.color;
-            ctx.fillRect(player.x, player.y, 25, 25 * stretch);
-            
-            // 6. Oči
-            if (Math.floor(Date.now() / 200) % 15 !== 0) {
-                ctx.fillStyle = "white"; ctx.fillRect(player.x+5, player.y+5, 6, 6); ctx.fillRect(player.x+15, player.y+5, 6, 6);
-                ctx.fillStyle = "black"; ctx.fillRect(player.x+7, player.y+7, 2, 2); ctx.fillRect(player.x+17, player.y+7, 2, 2);
-            }
-
-            // 7. Prepreke
-            obstacles.forEach(o => { 
-                ctx.fillStyle = o.color; 
-                if(o.type === 'spike') { ctx.beginPath(); ctx.moveTo(o.x, 385); ctx.lineTo(o.x+15, 355); ctx.lineTo(o.x+30, 385); ctx.fill(); }
-                else ctx.fillRect(o.x, 355, 30, 30); 
+            // Planine
+            ctx.fillStyle = "#558B2F";
+            mountains.forEach(m => {
+                ctx.fillRect(m.x, 380 - m.w/2, m.w, m.w/2);
+                if(gameActive) m.x -= 0.5;
+                if(m.x < -150) m.x = 450;
             });
-            
-            if(gameOver) { ctx.fillStyle="black"; ctx.font="30px Arial"; ctx.fillText("GAME OVER: "+score, 90, 200); }
-            requestAnimationFrame(() => { update(); draw(); });
+
+            // Tlo
+            ctx.fillStyle = "#2E7D32"; ctx.fillRect(0, 380, 400, 20);
+
+            // Igrač
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x, player.y, 30, 30);
+            if(player.jumping) player.dy += 0.8;
+            player.y += player.dy;
+            if(player.y >= 350) { player.y = 350; player.jumping = false; player.dy = 0; }
+
+            // Prepreke
+            ctx.fillStyle = "black";
+            obstacles.forEach(o => {
+                if(gameActive) o.x -= 5;
+                ctx.fillRect(o.x, 350, 30, 30);
+                if(o.x < -30) o.x = 450;
+            });
+
+            requestAnimationFrame(draw);
         }
         draw();
     </script>
