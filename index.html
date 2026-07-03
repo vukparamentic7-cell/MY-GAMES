@@ -1,12 +1,80 @@
-obstacles.forEach(o => { 
-                ctx.fillStyle = o.color; 
-                if(o.type === 'spike') {
-                    ctx.beginPath(); 
-                    ctx.moveTo(o.x, 400); 
-                    ctx.lineTo(o.x+15, 370); 
-                    ctx.lineTo(o.x+30, 400); 
-                    ctx.fill();
-                } else {
-                    ctx.fillRect(o.x, 370, 30, 30); 
-                }
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Jumper Block</title>
+    <style>
+        body { margin: 0; display: flex; flex-direction: column; align-items: center; background: #333; touch-action: none; color: white; font-family: sans-serif; }
+        canvas { background: #87CEEB; border: 4px solid #000; margin-top: 10px; width: 90vw; max-width: 400px; height: 400px; }
+        .menu { display: flex; gap: 10px; margin-top: 10px; }
+        button { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="menu">
+        <button onclick="player.color='blue'">PLAVI</button>
+        <button onclick="player.color='red'">CRVENI</button>
+        <button onclick="player.color='yellow'">ZUTI</button>
+    </div>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <div class="menu"><button onclick="handleAction()" style="background:#4CAF50; color:white; padding:15px 40px;">START / SKOK</button></div>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        let player = { x: 50, y: 360, dy: 0, jumping: false, color: 'blue' };
+        let particles = [];
+        let clouds = [{x: 50, y: 50}, {x: 200, y: 80}, {x: 350, y: 40}];
+        let obstacles = [{x: 600, type: 'spike', color: 'black'}, {x: 1200, type: 'block', color: 'purple'}, {x: 1800, type: 'block', color: 'green'}];
+        let gameActive = false, gameOver = false, score = 0, gameSpeed = 5;
+
+        function handleAction() {
+            if (!gameActive || gameOver) { gameActive = true; gameOver = false; score = 0; gameSpeed = 5; obstacles.forEach((o, i) => o.x = 600 + i * 600); }
+            else if (!player.jumping) { player.dy = -12; player.jumping = true; }
+        }
+
+        function update() {
+            if (!gameActive || gameOver) return;
+            player.dy += 0.6; player.y += player.dy;
+            if (player.y >= 360) { player.y = 360; player.jumping = false; player.dy = 0; }
+            
+            clouds.forEach(c => { c.x -= 0.5; if(c.x < -50) c.x = 450; });
+            
+            particles.push({x: player.x, y: player.y + 20, life: 10});
+            particles.forEach((p, i) => { p.x -= 2; p.life--; if(p.life <= 0) particles.splice(i, 1); });
+
+            obstacles.forEach(o => {
+                o.x -= gameSpeed;
+                if(o.x < -30) { o.x = 1200 + Math.random() * 400; score++; gameSpeed += 0.05; }
+                if(player.x < o.x + 25 && player.x + 25 > o.x && player.y + 25 > 365) gameOver = true;
             });
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, 400, 400);
+            ctx.fillStyle = "yellow"; ctx.beginPath(); ctx.arc(350, 50, 30, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = "white"; clouds.forEach(c => ctx.fillRect(c.x, c.y, 40, 20));
+            ctx.fillStyle = "rgba(200,200,200,0.5)";
+            particles.forEach(p => ctx.fillRect(p.x, p.y, 4, 4));
+
+            let stretch = player.jumping ? 1.2 : 1;
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x, player.y, 25, 25 * stretch);
+            
+            if (Math.floor(Date.now() / 200) % 15 !== 0) {
+                ctx.fillStyle = "white"; ctx.fillRect(player.x+5, player.y+5, 6, 6); ctx.fillRect(player.x+15, player.y+5, 6, 6);
+                ctx.fillStyle = "black"; ctx.fillRect(player.x+7, player.y+7, 2, 2); ctx.fillRect(player.x+17, player.y+7, 2, 2);
+            }
+
+            obstacles.forEach(o => { 
+                ctx.fillStyle = o.color; 
+                if(o.type === 'spike') { ctx.beginPath(); ctx.moveTo(o.x, 400); ctx.lineTo(o.x+15, 370); ctx.lineTo(o.x+30, 400); ctx.fill(); }
+                else ctx.fillRect(o.x, 370, 30, 30); 
+            });
+            if(gameOver) { ctx.fillStyle="black"; ctx.font="30px Arial"; ctx.fillText("GAME OVER: "+score, 90, 200); }
+            requestAnimationFrame(() => { update(); draw(); });
+        }
+        draw();
+    </script>
+</body>
+</html>
