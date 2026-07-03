@@ -4,7 +4,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Jumper Block</title>
     <style>
-        body { margin: 0; display: flex; flex-direction: column; align-items: center; background: #333; touch-action: none; color: white; font-family: sans-serif; }
+        body { margin: 0; display: flex; flex-direction: column; align-items: center; background: #222; touch-action: none; color: white; font-family: sans-serif; }
         canvas { background: #87CEEB; border: 4px solid #000; margin-top: 10px; width: 90vw; max-width: 400px; height: 400px; }
         .menu { display: flex; gap: 10px; margin-top: 10px; }
         button { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
@@ -38,7 +38,7 @@
             player.dy += 0.6; player.y += player.dy;
             if (player.y >= 360) { player.y = 360; player.jumping = false; player.dy = 0; }
             
-            mountains.forEach(m => { m.x -= 1; if(m.x < -150) m.x = 450; });
+            mountains.forEach(m => { m.x -= 0.5; if(m.x < -150) m.x = 450; });
             particles.push({x: player.x, y: player.y + 20, life: 10});
             particles.forEach((p, i) => { p.x -= 2; p.life--; if(p.life <= 0) particles.splice(i, 1); });
 
@@ -51,34 +51,39 @@
 
         function draw() {
             ctx.clearRect(0, 0, 400, 400);
-            // Pozadina - Planine
-            ctx.fillStyle = "#558B2F"; 
+            
+            // 1. Sunce
+            ctx.fillStyle = "#FFD700"; ctx.beginPath(); ctx.arc(350, 50, 30, 0, Math.PI*2); ctx.fill();
+            
+            // 2. Planine (dalje)
+            ctx.fillStyle = "#4A7C59"; 
             mountains.forEach(m => ctx.fillRect(m.x, 380 - (m.w/2), m.w, m.w/2));
             
-            // Tlo
-            ctx.fillStyle = "#2E7D32"; ctx.fillRect(0, 395, 400, 5);
+            // 3. Tlo (bliže)
+            ctx.fillStyle = "#2E7D32"; ctx.fillRect(0, 385, 400, 15);
             
-            // Čestice
-            ctx.fillStyle = "rgba(200,200,200,0.5)";
+            // 4. Čestice (para)
+            ctx.fillStyle = "rgba(255,255,255,0.6)";
             particles.forEach(p => ctx.fillRect(p.x, p.y, 4, 4));
 
-            // Igrač
+            // 5. Igrač
             let stretch = player.jumping ? 1.2 : 1;
             ctx.fillStyle = player.color;
             ctx.fillRect(player.x, player.y, 25, 25 * stretch);
             
-            // Oči
+            // 6. Oči
             if (Math.floor(Date.now() / 200) % 15 !== 0) {
                 ctx.fillStyle = "white"; ctx.fillRect(player.x+5, player.y+5, 6, 6); ctx.fillRect(player.x+15, player.y+5, 6, 6);
                 ctx.fillStyle = "black"; ctx.fillRect(player.x+7, player.y+7, 2, 2); ctx.fillRect(player.x+17, player.y+7, 2, 2);
             }
 
-            // Prepreke
+            // 7. Prepreke
             obstacles.forEach(o => { 
                 ctx.fillStyle = o.color; 
-                if(o.type === 'spike') { ctx.beginPath(); ctx.moveTo(o.x, 400); ctx.lineTo(o.x+15, 370); ctx.lineTo(o.x+30, 400); ctx.fill(); }
-                else ctx.fillRect(o.x, 370, 30, 30); 
+                if(o.type === 'spike') { ctx.beginPath(); ctx.moveTo(o.x, 385); ctx.lineTo(o.x+15, 355); ctx.lineTo(o.x+30, 385); ctx.fill(); }
+                else ctx.fillRect(o.x, 355, 30, 30); 
             });
+            
             if(gameOver) { ctx.fillStyle="black"; ctx.font="30px Arial"; ctx.fillText("GAME OVER: "+score, 90, 200); }
             requestAnimationFrame(() => { update(); draw(); });
         }
