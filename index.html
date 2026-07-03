@@ -2,10 +2,10 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Jumper Block - Deluxe</title>
+    <title>Jumper Block</title>
     <style>
-        body { margin: 0; display: flex; flex-direction: column; align-items: center; background: #1a1a1a; touch-action: none; color: white; font-family: sans-serif; }
-        canvas { background: linear-gradient(#87CEEB, #E0F7FA); border: 4px solid #000; margin-top: 10px; width: 90vw; max-width: 400px; height: 400px; cursor: pointer; }
+        body { margin: 0; display: flex; flex-direction: column; align-items: center; background: #333; touch-action: none; color: white; font-family: sans-serif; }
+        canvas { background: #87CEEB; border: 4px solid #000; margin-top: 10px; width: 90vw; max-width: 400px; height: 400px; }
         .menu { display: flex; gap: 10px; margin-top: 10px; }
         button { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
     </style>
@@ -22,75 +22,38 @@
     <script>
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
-        
-        let player = { x: 50, y: 350, dy: 0, jumping: false, color: 'blue' };
-        let clouds = [{x: 50, y: 50}, {x: 200, y: 80}, {x: 350, y: 40}];
-        let mountains = [{x: -50, w: 200}, {x: 150, w: 250}, {x: 400, w: 180}];
-        let obstacles = [{x: 600, type: 'spike'}, {x: 1000, type: 'block'}];
+        let player = { x: 50, y: 360, dy: 0, jumping: false, color: 'blue' };
+        let obstacles = [{x: 400, type: 'block'}];
         let gameActive = false, gameOver = false, score = 0;
 
         function handleAction() {
-            if (!gameActive || gameOver) { gameActive = true; gameOver = false; score = 0; }
+            if (!gameActive || gameOver) { gameActive = true; gameOver = false; score = 0; obstacles = [{x: 400, type: 'block'}]; }
             else if (!player.jumping) { player.dy = -12; player.jumping = true; }
         }
 
-        function drawCloud(x, y) {
-            ctx.fillStyle = "white";
-            ctx.beginPath();
-            ctx.arc(x, y, 20, 0, Math.PI * 2);
-            ctx.arc(x + 25, y - 10, 25, 0, Math.PI * 2);
-            ctx.arc(x + 50, y, 20, 0, Math.PI * 2);
-            ctx.fill();
-        }
-
-        function update() {
-            if (!gameActive || gameOver) return;
-            player.dy += 0.6; player.y += player.dy;
-            if (player.y >= 350) { player.y = 350; player.jumping = false; player.dy = 0; }
-            
-            clouds.forEach(c => { c.x -= 0.2; if(c.x < -100) c.x = 500; });
-            mountains.forEach(m => { m.x -= 0.5; if(m.x < -300) m.x = 500; });
-            
-            obstacles.forEach(o => {
-                o.x -= 6;
-                if(o.x < -30) { o.x = 600 + Math.random() * 300; score++; }
-                if(player.x < o.x + 30 && player.x + 30 > o.x && player.y + 30 > 350) gameOver = true;
-            });
-        }
-
-        function render() {
+        function draw() {
             ctx.clearRect(0, 0, 400, 400);
-            
-            // Oblaci
-            clouds.forEach(c => drawCloud(c.x, c.y));
-            
-            // Planine
-            ctx.fillStyle = "#4a7c59";
-            mountains.forEach(m => {
-                ctx.beginPath();
-                ctx.moveTo(m.x, 380);
-                ctx.lineTo(m.x + m.w/2, 380 - m.w/2);
-                ctx.lineTo(m.x + m.w, 380);
-                ctx.fill();
-            });
-
+            // Nebo i Sunce
+            ctx.fillStyle = "yellow"; ctx.beginPath(); ctx.arc(350, 50, 30, 0, Math.PI*2); ctx.fill();
             // Tlo
-            ctx.fillStyle = "#2e7d32";
-            ctx.fillRect(0, 380, 400, 20);
-
+            ctx.fillStyle = "#228B22"; ctx.fillRect(0, 385, 400, 15);
             // Igrač
-            ctx.fillStyle = player.color;
-            ctx.fillRect(player.x, player.y, 30, 30);
-
-            // Prepreke
-            ctx.fillStyle = "black";
-            obstacles.forEach(o => ctx.fillRect(o.x, 350, 30, 30));
-
-            if(gameOver) { ctx.fillStyle = "black"; ctx.fillText("GAME OVER", 170, 200); }
-            update();
-            requestAnimationFrame(render);
+            ctx.fillStyle = player.color; ctx.fillRect(player.x, player.y, 25, 25);
+            
+            if (gameActive) {
+                player.dy += 0.6; player.y += player.dy;
+                if (player.y >= 360) { player.y = 360; player.jumping = false; player.dy = 0; }
+                obstacles.forEach(o => {
+                    o.x -= 5;
+                    if(o.x < -30) { o.x = 400; score++; }
+                    if(player.x < o.x + 25 && player.x + 25 > o.x && player.y + 25 > 360) gameOver = true;
+                    ctx.fillStyle = "black"; ctx.fillRect(o.x, 360, 25, 25);
+                });
+            }
+            if(gameOver) { ctx.fillStyle="black"; ctx.font="30px Arial"; ctx.fillText("GAME OVER", 110, 200); }
+            requestAnimationFrame(draw);
         }
-        render();
+        draw();
     </script>
 </body>
 </html>
