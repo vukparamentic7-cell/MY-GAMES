@@ -1,61 +1,54 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jumper Block</title>
     <style>
-        body { margin: 0; display: flex; flex-direction: column; align-items: center; background: #333; touch-action: none; color: white; font-family: sans-serif; }
-        canvas { background: #87CEEB; border: 4px solid #000; margin-top: 10px; width: 90vw; max-width: 400px; height: 400px; }
-        .menu { display: flex; gap: 10px; margin-top: 10px; }
-        button { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        body { margin: 0; display: flex; flex-direction: column; align-items: center; background: #333; color: white; font-family: sans-serif; }
+        canvas { background: #87CEEB; border: 4px solid #000; margin-top: 10px; width: 300px; height: 300px; }
+        .menu { margin-top: 10px; }
+        button { padding: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
     <div class="menu">
-        <button onclick="player.color='blue'">PLAVI</button>
-        <button onclick="player.color='red'">CRVENI</button>
-        <button onclick="player.color='yellow'">ZUTI</button>
+        <button onclick="pColor='blue'">PLAVI</button>
+        <button onclick="pColor='red'">CRVENI</button>
+        <button onclick="pColor='yellow'">ZUTI</button>
     </div>
     <canvas id="gameCanvas" width="400" height="400"></canvas>
-    <div class="menu"><button onclick="handleAction()" style="background:#4CAF50; color:white; padding:15px 40px;">START / SKOK</button></div>
+    <div class="menu"><button onclick="start()" style="padding:15px 30px; background:green; color:white;">START</button></div>
 
     <script>
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
-        let player = { x: 50, y: 360, dy: 0, jumping: false, color: 'blue' };
-        let obstacle = { x: 400, y: 360 };
-        let gameActive = false, gameOver = false, score = 0;
+        let pColor = 'blue', pY = 350, pDy = 0, obsX = 400, running = false;
 
-        function handleAction() {
-            if (!gameActive || gameOver) { gameActive = true; gameOver = false; score = 0; obstacle.x = 400; }
-            else if (!player.jumping) { player.dy = -12; player.jumping = true; }
-        }
+        function start() { running = true; }
 
-        function draw() {
-            ctx.clearRect(0, 0, 400, 400);
-            // Sunce
+        function loop() {
+            // 1. Nebo
+            ctx.fillStyle = "#87CEEB"; ctx.fillRect(0, 0, 400, 400);
+            // 2. Sunce
             ctx.fillStyle = "yellow"; ctx.beginPath(); ctx.arc(350, 50, 30, 0, Math.PI*2); ctx.fill();
-            // Tlo
-            ctx.fillStyle = "#228B22"; ctx.fillRect(0, 385, 400, 15);
+            // 3. Tlo
+            ctx.fillStyle = "green"; ctx.fillRect(0, 370, 400, 30);
             
-            // Igrač sa animacijom istezanja
-            let stretch = player.jumping ? 1.3 : 1;
-            ctx.fillStyle = player.color;
-            ctx.fillRect(player.x, player.y - (25 * (stretch - 1)), 25, 25 * stretch);
+            // 4. Igrač
+            ctx.fillStyle = pColor;
+            ctx.fillRect(50, pY, 30, 30);
             
-            if (gameActive) {
-                player.dy += 0.6; player.y += player.dy;
-                if (player.y >= 360) { player.y = 360; player.jumping = false; player.dy = 0; }
-                
-                obstacle.x -= 5;
-                if(obstacle.x < -25) { obstacle.x = 400; score++; }
-                if(player.x < obstacle.x + 25 && player.x + 25 > obstacle.x && player.y + 25 > 360) gameOver = true;
-                ctx.fillStyle = "black"; ctx.fillRect(obstacle.x, 360, 25, 25);
+            if(running) {
+                pDy += 0.8; pY += pDy;
+                if(pY > 340) { pY = 340; pDy = 0; }
+                obsX -= 5;
+                if(obsX < -30) obsX = 400;
+                ctx.fillStyle = "black"; ctx.fillRect(obsX, 340, 30, 30);
             }
-            if(gameOver) { ctx.fillStyle="black"; ctx.font="30px Arial"; ctx.fillText("GAME OVER: "+score, 100, 200); }
-            requestAnimationFrame(draw);
+            requestAnimationFrame(loop);
         }
-        draw();
+        loop();
     </script>
 </body>
 </html>
