@@ -1,65 +1,96 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jumper Block - Pro Verzija</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Jumper Block - Deluxe</title>
     <style>
-        body { margin: 0; display: flex; flex-direction: column; align-items: center; background: #222; color: white; font-family: sans-serif; }
-        #gameCanvas { background: linear-gradient(#87CEEB, #E0F7FA); border: 4px solid #000; margin-top: 10px; }
-        .controls { margin-top: 10px; display: flex; gap: 5px; }
-        button { padding: 10px; cursor: pointer; }
+        body { margin: 0; display: flex; flex-direction: column; align-items: center; background: #1a1a1a; touch-action: none; color: white; font-family: sans-serif; }
+        canvas { background: linear-gradient(#87CEEB, #E0F7FA); border: 4px solid #000; margin-top: 10px; width: 90vw; max-width: 400px; height: 400px; cursor: pointer; }
+        .menu { display: flex; gap: 10px; margin-top: 10px; }
+        button { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div class="controls">
+    <div class="menu">
         <button onclick="player.color='blue'">PLAVI</button>
         <button onclick="player.color='red'">CRVENI</button>
         <button onclick="player.color='yellow'">ZUTI</button>
     </div>
     <canvas id="gameCanvas" width="400" height="400"></canvas>
-    <div class="controls"><button onclick="handleAction()" style="padding: 15px 40px; background: green; color: white;">START / SKOK</button></div>
+    <div class="menu"><button onclick="handleAction()" style="background:#4CAF50; color:white; padding:15px 40px;">START / SKOK</button></div>
 
     <script>
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
+        
         let player = { x: 50, y: 350, dy: 0, jumping: false, color: 'blue' };
-        let gameActive = false, obstacles = [{x: 400, type: 'block'}, {x: 700, type: 'spike'}];
-        let mountains = [{x: 0, w: 100}, {x: 200, w: 150}, {x: 350, w: 80}];
+        let clouds = [{x: 50, y: 50}, {x: 200, y: 80}, {x: 350, y: 40}];
+        let mountains = [{x: -50, w: 200}, {x: 150, w: 250}, {x: 400, w: 180}];
+        let obstacles = [{x: 600, type: 'spike'}, {x: 1000, type: 'block'}];
+        let gameActive = false, gameOver = false, score = 0;
 
-        function handleAction() { gameActive = true; if(!player.jumping) { player.dy = -12; player.jumping = true; } }
+        function handleAction() {
+            if (!gameActive || gameOver) { gameActive = true; gameOver = false; score = 0; }
+            else if (!player.jumping) { player.dy = -12; player.jumping = true; }
+        }
 
-        function draw() {
+        function drawCloud(x, y) {
+            ctx.fillStyle = "white";
+            ctx.beginPath();
+            ctx.arc(x, y, 20, 0, Math.PI * 2);
+            ctx.arc(x + 25, y - 10, 25, 0, Math.PI * 2);
+            ctx.arc(x + 50, y, 20, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function update() {
+            if (!gameActive || gameOver) return;
+            player.dy += 0.6; player.y += player.dy;
+            if (player.y >= 350) { player.y = 350; player.jumping = false; player.dy = 0; }
+            
+            clouds.forEach(c => { c.x -= 0.2; if(c.x < -100) c.x = 500; });
+            mountains.forEach(m => { m.x -= 0.5; if(m.x < -300) m.x = 500; });
+            
+            obstacles.forEach(o => {
+                o.x -= 6;
+                if(o.x < -30) { o.x = 600 + Math.random() * 300; score++; }
+                if(player.x < o.x + 30 && player.x + 30 > o.x && player.y + 30 > 350) gameOver = true;
+            });
+        }
+
+        function render() {
             ctx.clearRect(0, 0, 400, 400);
             
+            // Oblaci
+            clouds.forEach(c => drawCloud(c.x, c.y));
+            
             // Planine
-            ctx.fillStyle = "#558B2F";
+            ctx.fillStyle = "#4a7c59";
             mountains.forEach(m => {
-                ctx.fillRect(m.x, 380 - m.w/2, m.w, m.w/2);
-                if(gameActive) m.x -= 0.5;
-                if(m.x < -150) m.x = 450;
+                ctx.beginPath();
+                ctx.moveTo(m.x, 380);
+                ctx.lineTo(m.x + m.w/2, 380 - m.w/2);
+                ctx.lineTo(m.x + m.w, 380);
+                ctx.fill();
             });
 
             // Tlo
-            ctx.fillStyle = "#2E7D32"; ctx.fillRect(0, 380, 400, 20);
+            ctx.fillStyle = "#2e7d32";
+            ctx.fillRect(0, 380, 400, 20);
 
             // Igrač
             ctx.fillStyle = player.color;
             ctx.fillRect(player.x, player.y, 30, 30);
-            if(player.jumping) player.dy += 0.8;
-            player.y += player.dy;
-            if(player.y >= 350) { player.y = 350; player.jumping = false; player.dy = 0; }
 
             // Prepreke
             ctx.fillStyle = "black";
-            obstacles.forEach(o => {
-                if(gameActive) o.x -= 5;
-                ctx.fillRect(o.x, 350, 30, 30);
-                if(o.x < -30) o.x = 450;
-            });
+            obstacles.forEach(o => ctx.fillRect(o.x, 350, 30, 30));
 
-            requestAnimationFrame(draw);
+            if(gameOver) { ctx.fillStyle = "black"; ctx.fillText("GAME OVER", 170, 200); }
+            update();
+            requestAnimationFrame(render);
         }
-        draw();
+        render();
     </script>
 </body>
 </html>
