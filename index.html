@@ -55,14 +55,14 @@
             // 1. Sunce
             ctx.fillStyle = "#FFD700"; ctx.beginPath(); ctx.arc(350, 50, 30, 0, Math.PI*2); ctx.fill();
             
-            // 2. Planine (dalje)
+            // 2. Planine
             ctx.fillStyle = "#4A7C59"; 
             mountains.forEach(m => ctx.fillRect(m.x, 380 - (m.w/2), m.w, m.w/2));
             
-            // 3. Tlo (bliže)
+            // 3. Tlo
             ctx.fillStyle = "#2E7D32"; ctx.fillRect(0, 385, 400, 15);
             
-            // 4. Čestice (para)
+            // 4. Čestice
             ctx.fillStyle = "rgba(255,255,255,0.6)";
             particles.forEach(p => ctx.fillRect(p.x, p.y, 4, 4));
 
