@@ -1,91 +1,35 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Jumper Block - Deluxe</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jumper Block</title>
     <style>
-        body { margin: 0; display: flex; flex-direction: column; align-items: center; background: #333; touch-action: none; font-family: sans-serif; }
-        canvas { background: linear-gradient(#87CEEB, #E0F7FA); border: 4px solid #000; margin-top: 10px; width: 90vw; max-width: 400px; height: 400px; }
-        .menu { display: flex; gap: 5px; margin-top: 10px; flex-wrap: wrap; justify-content: center; }
-        button { padding: 10px; cursor: pointer; border-radius: 5px; border: none; font-weight: bold; }
+        body { margin: 0; display: flex; flex-direction: column; align-items: center; background: #333; color: white; }
+        canvas { border: 4px solid #000; background: #87CEEB; margin-top: 10px; width: 400px; height: 400px; }
     </style>
 </head>
 <body>
-    <div class="menu">
-        <button onclick="player.color='blue'">PLAVI</button>
-        <button onclick="player.color='red'">CRVENI</button>
-        <button onclick="player.color='yellow'">ZUTI</button>
-    </div>
     <canvas id="gameCanvas" width="400" height="400"></canvas>
-    <div class="menu"><button onclick="handleAction()" style="background:#4CAF50; color:white; padding:15px 40px;">START / SKOK</button></div>
+    <button onclick="location.reload()" style="padding:10px; margin-top:10px;">RESETUJ IGRU</button>
 
-<script>
-    const canvas = document.getElementById("gameCanvas");
-    const ctx = canvas.getContext("2d");
-    let player = { x: 50, y: 360, dy: 0, jumping: false, color: 'blue', particles: [] };
-    let obstacles = [{x: 400, type: 'block', color: 'green'}, {x: 800, type: 'spike', color: 'black'}, {x: 1200, type: 'block', color: 'purple'}];
-    let clouds = [{x: 50, y: 50}, {x: 200, y: 80}, {x: 350, y: 40}];
-    let gameActive = false, gameOver = false, score = 0;
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        let x = 50, y = 350;
 
-    function handleAction() {
-        if (!gameActive || gameOver) { gameActive = true; gameOver = false; score = 0; obstacles.forEach((o, i) => o.x = 400 + i * 400); }
-        else if (!player.jumping) { player.dy = -12; player.jumping = true; }
-    }
-
-    function draw() {
-        ctx.clearRect(0, 0, 400, 400);
-        
-        // Sunce
-        ctx.fillStyle = "#FFD700"; ctx.beginPath(); ctx.arc(350, 50, 30, 0, Math.PI*2); ctx.fill();
-        
-        // Oblaci
-        ctx.fillStyle = "white";
-        clouds.forEach(c => {
-            ctx.beginPath(); ctx.arc(c.x, c.y, 20, 0, Math.PI*2); ctx.arc(c.x+20, c.y-10, 25, 0, Math.PI*2); ctx.fill();
-            if(gameActive) c.x -= 0.3; if(c.x < -50) c.x = 450;
-        });
-
-        // Tlo
-        ctx.fillStyle = "#228B22"; ctx.fillRect(0, 385, 400, 15);
-
-        // Igrač - Air Dynamics (istezanje)
-        let stretch = player.jumping ? 1.4 : 1;
-        ctx.fillStyle = player.color;
-        ctx.fillRect(player.x, player.y - (25 * (stretch - 1)), 25, 25 * stretch);
-        
-        // Oči i Treptanje
-        let blink = Math.floor(Date.now() / 200) % 15 === 0;
-        ctx.fillStyle = blink ? player.color : "white";
-        ctx.fillRect(player.x+5, player.y+5, 5, 5); ctx.fillRect(player.x+15, player.y+5, 5, 5);
-        if(!blink) { ctx.fillStyle = "black"; ctx.fillRect(player.x+7, player.y+7, 2, 2); ctx.fillRect(player.x+17, player.y+7, 2, 2); }
-
-        // Para / Dim
-        if(gameActive) {
-            player.particles.push({x: player.x, y: player.y+20, life: 10});
-            player.particles.forEach((p, i) => { 
-                ctx.fillStyle = "rgba(200,200,200,"+ (p.life/10) +")"; ctx.fillRect(p.x, p.y, 4, 4);
-                p.x -= 2; p.life--; if(p.life <= 0) player.particles.splice(i, 1);
-            });
+        function draw() {
+            ctx.clearRect(0, 0, 400, 400);
+            // Nebo
+            ctx.fillStyle = "#87CEEB"; ctx.fillRect(0, 0, 400, 400);
+            // Sunce
+            ctx.fillStyle = "yellow"; ctx.beginPath(); ctx.arc(350, 50, 30, 0, Math.PI*2); ctx.fill();
+            // Tlo
+            ctx.fillStyle = "green"; ctx.fillRect(0, 380, 400, 20);
+            // Igrac
+            ctx.fillStyle = "blue"; ctx.fillRect(x, y, 30, 30);
+            requestAnimationFrame(draw);
         }
-
-        // Prepreke
-        obstacles.forEach(o => {
-            ctx.fillStyle = o.color;
-            if(o.type === 'spike') { ctx.beginPath(); ctx.moveTo(o.x, 385); ctx.lineTo(o.x+15, 355); ctx.lineTo(o.x+30, 385); ctx.fill(); }
-            else ctx.fillRect(o.x, 355, 30, 30);
-            
-            if(gameActive) {
-                o.x -= 6;
-                if(o.x < -30) { o.x = 1200; score++; }
-                if(player.x < o.x + 30 && player.x + 30 > o.x && player.y + 30 > 355) gameOver = true;
-            }
-        });
-
-        if(gameActive) { player.dy += 0.7; player.y += player.dy; if(player.y >= 360) { player.y = 360; player.jumping = false; player.dy = 0; } }
-        if(gameOver) { ctx.fillStyle="black"; ctx.font="30px Arial"; ctx.fillText("GAME OVER: "+score, 90, 200); }
-        requestAnimationFrame(draw);
-    }
-    draw();
-</script>
+        draw();
+    </script>
 </body>
 </html>
