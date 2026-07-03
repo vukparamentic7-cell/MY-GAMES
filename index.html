@@ -24,7 +24,7 @@
         const ctx = canvas.getContext("2d");
         let player = { x: 50, y: 360, dy: 0, jumping: false, color: 'blue' };
         let particles = [];
-        let clouds = [{x: 50, y: 50}, {x: 200, y: 80}, {x: 350, y: 40}];
+        let mountains = [{x: 0, w: 100}, {x: 150, w: 120}, {x: 300, w: 80}];
         let obstacles = [{x: 600, type: 'spike', color: 'black'}, {x: 1200, type: 'block', color: 'purple'}, {x: 1800, type: 'block', color: 'green'}];
         let gameActive = false, gameOver = false, score = 0, gameSpeed = 5;
 
@@ -38,8 +38,7 @@
             player.dy += 0.6; player.y += player.dy;
             if (player.y >= 360) { player.y = 360; player.jumping = false; player.dy = 0; }
             
-            clouds.forEach(c => { c.x -= 0.5; if(c.x < -50) c.x = 450; });
-            
+            mountains.forEach(m => { m.x -= 1; if(m.x < -150) m.x = 450; });
             particles.push({x: player.x, y: player.y + 20, life: 10});
             particles.forEach((p, i) => { p.x -= 2; p.life--; if(p.life <= 0) particles.splice(i, 1); });
 
@@ -52,20 +51,29 @@
 
         function draw() {
             ctx.clearRect(0, 0, 400, 400);
-            ctx.fillStyle = "yellow"; ctx.beginPath(); ctx.arc(350, 50, 30, 0, Math.PI*2); ctx.fill();
-            ctx.fillStyle = "white"; clouds.forEach(c => ctx.fillRect(c.x, c.y, 40, 20));
+            // Pozadina - Planine
+            ctx.fillStyle = "#558B2F"; 
+            mountains.forEach(m => ctx.fillRect(m.x, 380 - (m.w/2), m.w, m.w/2));
+            
+            // Tlo
+            ctx.fillStyle = "#2E7D32"; ctx.fillRect(0, 395, 400, 5);
+            
+            // Čestice
             ctx.fillStyle = "rgba(200,200,200,0.5)";
             particles.forEach(p => ctx.fillRect(p.x, p.y, 4, 4));
 
+            // Igrač
             let stretch = player.jumping ? 1.2 : 1;
             ctx.fillStyle = player.color;
             ctx.fillRect(player.x, player.y, 25, 25 * stretch);
             
+            // Oči
             if (Math.floor(Date.now() / 200) % 15 !== 0) {
                 ctx.fillStyle = "white"; ctx.fillRect(player.x+5, player.y+5, 6, 6); ctx.fillRect(player.x+15, player.y+5, 6, 6);
                 ctx.fillStyle = "black"; ctx.fillRect(player.x+7, player.y+7, 2, 2); ctx.fillRect(player.x+17, player.y+7, 2, 2);
             }
 
+            // Prepreke
             obstacles.forEach(o => { 
                 ctx.fillStyle = o.color; 
                 if(o.type === 'spike') { ctx.beginPath(); ctx.moveTo(o.x, 400); ctx.lineTo(o.x+15, 370); ctx.lineTo(o.x+30, 400); ctx.fill(); }
