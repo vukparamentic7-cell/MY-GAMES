@@ -1,62 +1,172 @@
 <!DOCTYPE html>
-<html>
+<html lang="sr">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jumper Block - Deluxe</title>
+    <meta charset="UTF-8">
+    <title>Jumper Block</title>
     <style>
-        body { margin: 0; display: flex; flex-direction: column; align-items: center; background: #333; color: white; font-family: sans-serif; }
-        canvas { background: #87CEEB; border: 4px solid #000; margin-top: 10px; width: 400px; height: 400px; }
-        button { padding: 15px 30px; margin-top: 10px; cursor: pointer; }
+        body { margin: 0; overflow: hidden; background: #87CEEB; } /* Plavo nebo */
+        canvas { display: block; background: #87CEEB; }
     </style>
 </head>
 <body>
-    <canvas id="gameCanvas" width="400" height="400"></canvas>
-    <button onclick="location.reload()">RESETUJ IGRU</button>
-    <script>
-        const canvas = document.getElementById("gameCanvas");
-        const ctx = canvas.getContext("2d");
-        let y = 350, dy = 0, jumping = false;
 
-        function draw() {
-            ctx.clearRect(0, 0, 400, 400);
-            // Nebo
-            ctx.fillStyle = "#87CEEB"; ctx.fillRect(0, 0, 400, 400);
-            // Sunce
-            ctx.fillStyle = "yellow"; ctx.beginPath(); ctx.arc(350, 50, 30, 0, Math.PI*2); ctx.fill();
-            // Tlo
-            ctx.fillStyle = "green"; ctx.fillRect(0, 380, 400, 20);
-            
-            // Igrač sa air dynamics (istezanje pri skoku)
-            let height = jumping ? 40 : 30;
-            ctx.fillStyle = "blue";
-            ctx.fillRect(50, y - (height - 30), 30, height);
-            
-            // Oči sa treptanjem
-            let blink = Math.floor(Date.now() / 500) % 5 === 0;
-            ctx.fillStyle = blink ? "blue" : "white";
-            ctx.fillRect(55, y + 5, 8, 8);
-            ctx.fillRect(68, y + 5, 8, 8);
-            if (!blink) {
-                ctx.fillStyle = "black";
-                ctx.fillRect(58, y + 8, 3, 3);
-                ctx.fillRect(71, y + 8, 3, 3);
-            }
+<canvas id="gameCanvas"></canvas>
 
-            requestAnimationFrame(draw);
-        }
-        
-        window.onclick = () => { if(!jumping) { dy = -15; jumping = true; } };
-        
-        function update() {
-            if(jumping) {
-                dy += 0.8; y += dy;
-                if(y >= 350) { y = 350; jumping = false; dy = 0; }
-            }
-            requestAnimationFrame(update);
-        }
-        
-        draw();
-        update();
-    </script>
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+// TRAVA (Podloga)
+const travaY = canvas.height - 100;
+
+// IGRAČ (Plavi sa bodljama)
+const igrac = {
+    x: 100,
+    y: travaY - 50,
+    w: 50,
+    h: 50,
+    yBrzina: 0,
+    gravitacija: 0.6,
+    silaSkoka: -15,
+    naZemlji: false,
+    otvoreneOci: true
+};
+
+// NEPRIJATELJ (Crvena kocka)
+const neprijatelj = {
+    x: canvas.width,
+    y: travaY - 40,
+    w: 40,
+    h: 40,
+    brzina: 7
+};
+
+// OBLACI (Pokretni)
+const oblaci = [
+    { x: 200, y: 100, r: 30 },
+    { x: 600, y: 80, r: 40 },
+    { x: 1000, y: 120, r: 35 }
+];
+
+// TAJMER ZA TREPTANJE (Svake 3 sekunde trepne na 150 milisekundi)
+setInterval(() => {
+    igrac.otvoreneOci = false;
+    setTimeout(() => { igrac.otvoreneOci = true; }, 150);
+}, 3000);
+
+// KONTROLE ZA SKOK
+window.addEventListener("keydown", (e) => {
+    if ((e.code === "Space" || e.code === "ArrowUp") && igrac.naZemlji) {
+        igrac.yBrzina = igrac.silaSkoka;
+        igrac.naZemlji = false;
+    }
+});
+
+function update() {
+    // Fizika igrača
+    igrac.yBrzina += igrac.gravitacija;
+    igrac.y += igrac.yBrzina;
+
+    if (igrac.y >= travaY - igrac.h) {
+        igrac.y = travaY - igrac.h;
+        igrac.yBrzina = 0;
+        igrac.naZemlji = true;
+    }
+
+    // Kretanje crvene kocke
+    neprijatelj.x -= neprijatelj.brzina;
+    if (neprijatelj.x < -neprijatelj.w) {
+        neprijatelj.x = canvas.width + Math.random() * 300; // Resetuj prepreku desno
+    }
+
+    // Kretanje oblaka
+    oblaci.forEach(oblak => {
+        oblak.x -= 0.5;
+        if (oblak.x < -100) oblak.x = canvas.width + 100;
+    });
+
+    // DETEKCIJA SMRTI (Crvena kocka te ubija)
+    if (igrac.x < neprijatelj.x + neprijatelj.w &&
+        igrac.x + igrac.w > neprijatelj.x &&
+        igrac.y < neprijatelj.y + neprijatelj.h &&
+        igrac.y + igrac.h > neprijatelj.y) {
+        // RESETUJ IGRU AKO TE UBIJE
+        document.location.reload();
+    }
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // 1. SUNCE
+    ctx.fillStyle = "#FFEB3B";
+    ctx.beginPath();
+    ctx.arc(canvas.width - 100, 100, 40, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 2. OBLACI
+    ctx.fillStyle = "#FFFFFF";
+    oblaci.forEach(oblak => {
+        ctx.beginPath();
+        ctx.arc(oblak.x, oblak.y, oblak.r, 0, Math.PI * 2);
+        ctx.arc(oblak.x + 30, oblak.y - 10, oblak.r, 0, Math.PI * 2);
+        ctx.arc(oblak.x + 60, oblak.y, oblak.r, 0, Math.PI * 2);
+        ctx.fill();
+    });
+
+    // 3. ZELENA TRAVA
+    ctx.fillStyle = "#4CAF50";
+    ctx.fillRect(0, travaY, canvas.width, 100);
+
+    // 4. CRVENA KOCKA (Neprijatelj)
+    ctx.fillStyle = "#F44336";
+    ctx.fillRect(neprijatelj.x, neprijatelj.y, neprijatelj.w, neprijatelj.h);
+
+    // 5. PLAVI IGRAČ
+    ctx.fillStyle = "#2196F3";
+    ctx.fillRect(igrac.x, igrac.y, igrac.w, igrac.h);
+
+    // 6. BODLJE NA IGRAČU (Crne bodlje na vrhu plave kocke)
+    ctx.fillStyle = "#333";
+    for (let i = 0; i < 3; i++) {
+        ctx.beginPath();
+        let bodljaX = igrac.x + (i * 18) + 5;
+        ctx.moveTo(bodljaX, igrac.y);
+        ctx.lineTo(bodljaX + 8, igrac.y - 12); // Vrh bodlje
+        ctx.lineTo(bodljaX + 16, igrac.y);
+        ctx.fill();
+    }
+
+    // 7. OČI KOJE TREPĆU
+    if (igrac.otvoreneOci) {
+        ctx.fillStyle = "#FFFFFF"; // Bele oči
+        ctx.fillRect(igrac.x + 10, igrac.y + 12, 10, 10);
+        ctx.fillRect(igrac.x + 30, igrac.y + 12, 10, 10);
+        ctx.fillStyle = "#000000"; // Crne zenice
+        ctx.fillRect(igrac.x + 14, igrac.y + 15, 4, 4);
+        ctx.fillRect(igrac.x + 34, igrac.y + 15, 4, 4);
+    } else {
+        // Zatvorene oči (linije kad trepne)
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(igrac.x + 10, igrac.y + 17); ctx.lineTo(igrac.x + 20, igrac.y + 17);
+        ctx.moveTo(igrac.x + 30, igrac.y + 17); ctx.lineTo(igrac.x + 40, igrac.y + 17);
+        ctx.stroke();
+    }
+}
+
+function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+</script>
+
 </body>
 </html>
