@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jumper Block</title>
     <style>
-        /* Postavlja igru preko celog ekrana bez skrolovanja */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -31,11 +30,230 @@
 </head>
 <body>
 
-    <!-- Platno na kome se igra crta -->
     <canvas id="gameCanvas"></canvas>
 
-    <!-- Povezivanje sa tvojim kodom -->
-    <script src="script.js"></script>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
 
+        canvas.width = 800;
+        canvas.height = 400;
+
+        let gameState = 'menu'; 
+        let score = 0;
+        let highScore = localStorage.getItem('jumperHighScore') || 0; 
+
+        let player = {
+            x: 100,
+            y: 300,
+            width: 40,
+            height: 40,
+            color: 'red', 
+            dy: 0, 
+            gravity: 1.2, 
+            jumpForce: -20,
+            onGround: false,
+            
+            eyeBlinkTimer: 0,
+            isBlinking: false,
+
+            jump: function() {
+                if (this.onGround) {
+                    this.dy = this.jumpForce;
+                    this.onGround = false;
+                }
+            },
+
+            update: function() {
+                this.dy += this.gravity;
+                this.y += this.dy;
+
+                if (this.y + this.height > canvas.height - 20) {
+                    this.y = canvas.height - 20 - this.height;
+                    this.dy = 0;
+                    this.onGround = true;
+                }
+
+                this.eyeBlinkTimer++;
+                if (!this.isBlinking && this.eyeBlinkTimer > 150) { 
+                    this.isBlinking = true;
+                    this.eyeBlinkTimer = 0;
+                }
+                if (this.isBlinking && this.eyeBlinkTimer > 10) { 
+                    this.isBlinking = false;
+                    this.eyeBlinkTimer = 0;
+                }
+            },
+
+            draw: function() {
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+
+                ctx.fillStyle = 'white';
+                let eyeSize = 8;
+                let eyeY = this.y + 10;
+                let leftEyeX = this.x + 8;
+                let rightEyeX = this.x + 24;
+
+                if (this.isBlinking) {
+                    ctx.fillRect(leftEyeX, eyeY + 4, eyeSize, 2);
+                    ctx.fillRect(rightEyeX, eyeY + 4, eyeSize, 2);
+                } else {
+                    ctx.fillRect(leftEyeX, eyeY, eyeSize, eyeSize);
+                    ctx.fillRect(rightEyeX, eyeY, eyeSize, eyeSize);
+
+                    ctx.fillStyle = 'black';
+                    ctx.fillRect(leftEyeX + 2, eyeY + 2, 4, 4);
+                    ctx.fillRect(rightEyeX + 2, eyeY + 2, 4, 4);
+
+                    if (this.color === 'red') {
+                        ctx.strokeStyle = 'black';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.moveTo(leftEyeX - 2, eyeY - 2);
+                        ctx.lineTo(leftEyeX + eyeSize + 2, eyeY + 3);
+                        ctx.moveTo(rightEyeX - 2, eyeY + 3);
+                        ctx.lineTo(rightEyeX + eyeSize + 2, eyeY - 2);
+                        ctx.stroke();
+                    }
+                }
+            }
+        };
+
+        let obstacles = [];
+        let obstacleTimer = 0;
+
+        function spawnObstacle() {
+            let size = 30;
+            obstacles.push({
+                x: canvas.width,
+                y: canvas.height - 20 - size, 
+                width: size,
+                height: size,
+                color: 'black'
+            });
+        }
+
+        function resetGame() {
+            score = 0;
+            player.y = 300;
+            player.dy = 0;
+            obstacles = [];
+            gameState = 'playing';
+        }
+
+        function gameOver() {
+            gameState = 'dead';
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('jumperHighScore', highScore); 
+            }
+        }
+
+        window.addEventListener('keydown', function(e) {
+            if (e.code === 'Space') {
+                if (gameState === 'playing') {
+                    player.jump();
+                } else if (gameState === 'menu' || gameState === 'dead') {
+                    resetGame();
+                }
+            }
+        });
+
+        canvas.addEventListener('click', function(e) {
+            if (gameState === 'menu' || gameState === 'dead') {
+                const colors = ['red', 'yellow', 'green', 'blue'];
+                let currentColorIndex = colors.indexOf(player.color);
+                player.color = colors[(currentColorIndex + 1) % colors.length];
+            }
+        });
+
+        function loop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#333';
+            ctx.fillRect(0, canvas.height - 20, canvas.width, 20);
+
+            if (gameState === 'menu') {
+                player.draw();
+                
+                ctx.fillStyle = 'black';
+                ctx.font = '30px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText("JUMPER BLOCK", canvas.width / 2, canvas.height / 2 - 40);
+                
+                ctx.font = '20px Arial';
+                ctx.fillText("Pritisni SPACE za početak", canvas.width / 2, canvas.height / 2);
+                ctx.fillText("Klikni za promenu boje: " + player.color.toUpperCase(), canvas.width / 2, canvas.height / 2 + 30);
+                ctx.fillText("High Score: " + highScore, canvas.width / 2, canvas.height / 2 + 70);
+
+            } else if (gameState === 'playing') {
+                player.update();
+                player.draw();
+
+                obstacleTimer++;
+                if (obstacleTimer > 100) { 
+                    spawnObstacle();
+                    obstacleTimer = 0;
+                }
+
+                for (let i = obstacles.length - 1; i >= 0; i--) {
+                    let o = obstacles[i];
+                    o.x -= 8; 
+                    
+                    ctx.fillStyle = o.color;
+                    ctx.fillRect(o.x, o.y, o.width, o.height);
+
+                    if (player.x < o.x + o.width &&
+                        player.x + player.width > o.x &&
+                        player.y < o.y + o.height &&
+                        player.y + player.height > o.y) {
+                        gameOver();
+                    }
+
+                    if (o.x + o.width < 0) {
+                        obstacles.splice(i, 1);
+                        score++; 
+                    }
+                }
+
+                ctx.fillStyle = 'black';
+                ctx.font = '24px Arial';
+                ctx.textAlign = 'left';
+                ctx.fillText("Score: " + score, 20, 40);
+
+            } else if (gameState === 'dead') {
+                player.draw();
+                for (let o of obstacles) { ctx.fillStyle = o.color; ctx.fillRect(o.x, o.y, o.width, o.height); } 
+
+                ctx.fillStyle = 'rgba(0,0,0,0.5)';
+                ctx.fillRect(0,0, canvas.width, canvas.height);
+
+                ctx.fillStyle = 'white';
+                ctx.font = '40px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 20);
+                
+                ctx.font = '24px Arial';
+                ctx.fillText("Tvoj Skor: " + score, canvas.width / 2, canvas.height / 2 + 20);
+                ctx.fillText("Najbolji Skor: " + highScore, canvas.width / 2, canvas.height / 2 + 50);
+                
+                if (score >= highScore && score > 0) {
+                    ctx.fillStyle = 'yellow';
+                    ctx.fillText("NOVI REKORD!", canvas.width / 2, canvas.height / 2 + 80);
+                } else {
+                    ctx.fillText("Pokušaj da oboriš rekord!", canvas.width / 2, canvas.height / 2 + 80);
+                }
+
+                ctx.fillStyle = 'white';
+                ctx.font = '20px Arial';
+                ctx.fillText("Pritisni SPACE za ponovo", canvas.width / 2, canvas.height / 2 + 120);
+            }
+
+            requestAnimationFrame(loop);
+        }
+
+        loop();
+    </script>
 </body>
 </html>
