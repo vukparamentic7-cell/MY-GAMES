@@ -5,79 +5,279 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jumper Block</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body, html { width: 100%; height: 100%; overflow: hidden; background-color: #e0e0e0; display: flex; justify-content: center; align-items: center; }
-        canvas { 
-            background-color: #ffffff; 
-            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2); 
-            max-width: 100%; 
-            max-height: 100%; 
-            aspect-ratio: 2 / 1; 
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+        }
+        canvas {
+            background-color: #ffffff; /* Tvoja bela pozadina */
+            box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.15);
+            border-radius: 4px;
+            display: block;
         }
     </style>
 </head>
 <body>
-    <canvas id="gameCanvas"></canvas>
-    <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = 800; canvas.height = 400;
 
-        let gameState = 'menu'; 
-        let score = 0;
-        let highScore = localStorage.getItem('jumperHighScore') || 0; 
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
 
-        let player = {
-            x: 100, y: 300, width: 40, height: 40, color: 'red', dy: 0, gravity: 1.2, jumpForce: -20, onGround: false,
-            eyeBlinkTimer: 0, isBlinking: false,
-            jump: function() { if (this.onGround) { this.dy = this.jumpForce; this.onGround = false; } },
-            update: function() {
-                this.dy += this.gravity; this.y += this.dy;
-                if (this.y + this.height > canvas.height - 20) { this.y = canvas.height - 20 - this.height; this.dy = 0; this.onGround = true; }
-                this.eyeBlinkTimer++;
-                if (!this.isBlinking && this.eyeBlinkTimer > 150) { this.isBlinking = true; this.eyeBlinkTimer = 0; }
-                if (this.isBlinking && this.eyeBlinkTimer > 10) { this.isBlinking = false; this.eyeBlinkTimer = 0; }
-            },
-            draw: function() {
-                ctx.fillStyle = this.color; ctx.fillRect(this.x, this.y, this.width, this.height);
-                ctx.fillStyle = 'white';
-                let eyeSize = 8; let eyeY = this.y + 10; let leftEyeX = this.x + 8; let rightEyeX = this.x + 24;
-                if (this.isBlinking) { ctx.fillRect(leftEyeX, eyeY + 4, eyeSize, 2); ctx.fillRect(rightEyeX, eyeY + 4, eyeSize, 2); }
-                else {
-                    ctx.fillRect(leftEyeX, eyeY, eyeSize, eyeSize); ctx.fillRect(rightEyeX, eyeY, eyeSize, eyeSize);
-                    ctx.fillStyle = 'black'; ctx.fillRect(leftEyeX + 2, eyeY + 2, 4, 4); ctx.fillRect(rightEyeX + 2, eyeY + 2, 4, 4);
-                    if (this.color === 'red') { ctx.strokeStyle = 'black'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(leftEyeX - 2, eyeY - 2); ctx.lineTo(leftEyeX + eyeSize + 2, eyeY + 3); ctx.moveTo(rightEyeX - 2, eyeY + 3); ctx.lineTo(rightEyeX + eyeSize + 2, eyeY - 2); ctx.stroke(); }
-                }
-            }
-        };
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
 
-        let obstacles = []; let obstacleTimer = 0;
-        function spawnObstacle() { obstacles.push({ x: canvas.width, y: canvas.height - 50, width: 30, height: 30, color: 'black' }); }
-        function resetGame() { score = 0; player.y = 300; player.dy = 0; obstacles = []; gameState = 'playing'; }
-        function gameOver() { gameState = 'dead'; if (score > highScore) { highScore = score; localStorage.setItem('jumperHighScore', highScore); } }
+const GRAVITY = 0.6;
+const JUMP_FORCE = -12;
+// VEĆI RAZMAK IZMEĐU PREPREKA (Povećaj broj ako želiš još lakše)
+const MIN_OBSTACLE_GAP = 160; 
 
-        window.addEventListener('keydown', function(e) { if (e.code === 'Space') { if (gameState === 'playing') player.jump(); else if (gameState !== 'playing') resetGame(); } });
-        canvas.addEventListener('click', function(e) { if (gameState !== 'playing') { const colors = ['red', 'yellow', 'green', 'blue']; player.color = colors[(colors.indexOf(player.color) + 1) % colors.length]; } });
+let score = 0;
+let highScore = localStorage.getItem("jumper_highscore") || 0;
+let gameOver = false;
+let gameFrame = 0;
 
-        function loop() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = '#333'; ctx.fillRect(0, canvas.height - 20, canvas.width, 20);
-            if (gameState === 'menu') { player.draw(); ctx.fillStyle = 'black'; ctx.font = '30px Arial'; ctx.textAlign = 'center'; ctx.fillText("JUMPER BLOCK", canvas.width/2, canvas.height/2 - 40); ctx.fillText("Pritisni SPACE", canvas.width/2, canvas.height/2); }
-            else if (gameState === 'playing') {
-                player.update(); player.draw(); obstacleTimer++; if (obstacleTimer > 100) { spawnObstacle(); obstacleTimer = 0; }
-                for (let i = obstacles.length - 1; i >= 0; i--) {
-                    let o = obstacles[i]; o.x -= 8; ctx.fillStyle = o.color; ctx.fillRect(o.x, o.y, o.width, o.height);
-                    if (player.x < o.x + o.width && player.x + player.width > o.x && player.y + player.height > o.y) gameOver();
-                    if (o.x + o.width < 0) { obstacles.splice(i, 1); score++; }
-                }
-                ctx.fillStyle = 'black'; ctx.fillText("Score: " + score, 20, 40);
-            } else if (gameState === 'dead') {
-                player.draw(); ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(0,0, canvas.width, canvas.height);
-                ctx.fillStyle = 'white'; ctx.textAlign = 'center'; ctx.fillText("GAME OVER", canvas.width/2, canvas.height/2);
-            }
-            requestAnimationFrame(loop);
+// CRVENA KOCKICA (IGRAČ)
+const player = {
+    x: 100,
+    y: 250,
+    size: 50,
+    vy: 0,
+    isGrounded: false,
+    eyesOpen: true,
+    blinkTimer: 0
+};
+
+let obstacles = [];
+const obstacleTypes = [
+    { type: 'spike', width: 30, height: 40, color: '#000000' },
+    { type: 'box', width: 45, height: 45, color: '#000000' }
+];
+let nextObstacleSpawnFrame = 0;
+
+// KONTROLE
+window.addEventListener("keydown", (e) => {
+    if ((e.code === "Space" || e.code === "ArrowUp" || e.code === "KeyW")) {
+        if (player.isGrounded && !gameOver) {
+            player.vy = JUMP_FORCE;
+            player.isGrounded = false;
         }
-        loop();
-    </script>
+        if (gameOver) {
+            resetGame();
+        }
+    }
+});
+
+canvas.addEventListener("touchstart", () => {
+    if (player.isGrounded && !gameOver) {
+        player.vy = JUMP_FORCE;
+        player.isGrounded = false;
+    }
+    if (gameOver) {
+        resetGame();
+    }
+});
+
+function resetGame() {
+    score = 0;
+    obstacles = [];
+    player.y = 250;
+    player.vy = 0;
+    player.isGrounded = true;
+    gameOver = false;
+    gameFrame = 0;
+    nextObstacleSpawnFrame = 50;
+}
+
+// TAJMING ZA TREPTANJE (na svakih ~3 sekunde)
+function updateBlinking() {
+    player.blinkTimer++;
+    if (player.blinkTimer % 180 < 12) {
+        player.eyesOpen = false;
+    } else {
+        player.eyesOpen = true;
+    }
+}
+
+// CRTANJE CRNE PODLOGE (TLA)
+function drawGround() {
+    ctx.fillStyle = "#333333"; // Tvoje tamno sivo/crno tlo
+    ctx.fillRect(0, 300, canvas.width, 100);
+}
+
+// CRTANJE ORIGINALNE CRVENE KOCKICE SA LJUTIM OČIMA KOJE TREPĆU
+function drawPlayer() {
+    updateBlinking();
+    const x = player.x;
+    const y = player.y;
+    const size = player.size;
+
+    // Crveno telo kockice
+    ctx.fillStyle = "#FF0000";
+    ctx.fillRect(x, y, size, size);
+
+    if (player.eyesOpen) {
+        // LEVO OKO (Belo)
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(x + 8, y + 15, 12, 12);
+        // DESNO OKO (Belo)
+        ctx.fillRect(x + size - 20, y + 15, 12, 12);
+
+        // LEVA ZENICA (Crvena/Crna)
+        ctx.fillStyle = "#000000";
+        ctx.fillRect(x + 12, y + 19, 5, 5);
+        // DESNA ZENICA
+        ctx.fillRect(x + size - 17, y + 19, 5, 5);
+
+        // LJUTE OBRVE (Kose crne linije preko očiju)
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 3;
+        ctx.lineCap = "round";
+
+        // Leva obrva (nagnuta nadole ka sredini)
+        ctx.beginPath();
+        ctx.moveTo(x + 5, y + 10);
+        ctx.lineTo(x + 22, y + 18);
+        ctx.stroke();
+
+        // Desna obrva (nagnuta nadole ka sredini)
+        ctx.beginPath();
+        ctx.moveTo(x + size - 5, y + 10);
+        ctx.lineTo(x + size - 22, y + 18);
+        ctx.stroke();
+    } else {
+        // Kada trepne: Ljut pogled ostaje namršten, ali su oči sklopljene u tanke crte
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 3.5;
+        ctx.lineCap = "round";
+
+        // Levo sklopljeno oko pod uglom
+        ctx.beginPath();
+        ctx.moveTo(x + 8, y + 19);
+        ctx.lineTo(x + 18, y + 21);
+        ctx.stroke();
+
+        // Desno sklopljeno oko pod uglom
+        ctx.beginPath();
+        ctx.moveTo(x + size - 8, y + 19);
+        ctx.lineTo(x + size - 18, y + 21);
+        ctx.stroke();
+    }
+}
+
+// LEPO VIDLJIV SCORE I HIGH SCORE
+function drawScores() {
+    ctx.save();
+    ctx.font = "bold 26px sans-serif";
+    ctx.fillStyle = "#333333"; // Tamno siva slova koja se vide na beloj pozadini
+    
+    // Blaga bela senka iza teksta za bolji kontrast
+    ctx.shadowColor = "rgba(255, 255, 255, 0.8)";
+    ctx.shadowBlur = 4;
+
+    ctx.fillText("SCORE: " + score, 25, 45);
+
+    ctx.textAlign = "right";
+    ctx.fillText("BEST: " + highScore, canvas.width - 25, 45);
+    ctx.restore();
+}
+
+function update() {
+    gameFrame++;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    drawGround();
+
+    if (!gameOver) {
+        player.vy += GRAVITY;
+        player.y += player.vy;
+
+        if (player.y >= 300 - player.size) {
+            player.y = 300 - player.size;
+            player.vy = 0;
+            player.isGrounded = true;
+        }
+
+        // GENERISANJE PREPREKA SA VEĆIM RAZMAKOM
+        if (gameFrame >= nextObstacleSpawnFrame) {
+            let randomType = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)];
+            obstacles.push({
+                x: canvas.width,
+                y: 300 - randomType.height,
+                width: randomType.width,
+                height: randomType.height,
+                type: randomType.type,
+                color: randomType.color
+            });
+            nextObstacleSpawnFrame = gameFrame + MIN_OBSTACLE_GAP + Math.floor(Math.random() * 60);
+        }
+
+        for (let i = obstacles.length - 1; i >= 0; i--) {
+            let o = obstacles[i];
+            o.x -= (6 + Math.floor(score / 10)); // Brzina se lagano povećava
+
+            if (o.x + o.width < 0) {
+                obstacles.splice(i, 1);
+                score++;
+                if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem("jumper_highscore", highScore);
+                }
+                continue;
+            }
+
+            if (
+                player.x < o.x + o.width &&
+                player.x + player.size > o.x &&
+                player.y < o.y + o.height &&
+                player.y + player.size > o.y
+            ) {
+                gameOver = true;
+            }
+        }
+    }
+
+    // CRTANJE PREPREKA (Šiljci i kutije)
+    obstacles.forEach(o => {
+        ctx.fillStyle = o.color;
+        if (o.type === 'spike') {
+            ctx.beginPath();
+            ctx.moveTo(o.x, o.y + o.height);
+            ctx.lineTo(o.x + o.width / 2, o.y);
+            ctx.lineTo(o.x + o.width, o.y + o.height);
+            ctx.fill();
+        } else {
+            ctx.fillRect(o.x, o.y, o.width, o.height);
+        }
+    });
+
+    drawPlayer();
+    drawScores();
+
+    if (gameOver) {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.font = "bold 36px Arial";
+        ctx.fillStyle = "#FFFFFF";
+        ctx.textAlign = "center";
+        ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 20);
+
+        ctx.font = "20px Arial";
+        ctx.fillText("Pritisni SPACE za ponovnu igru", canvas.width / 2, canvas.height / 2 + 20);
+    }
+
+    requestAnimationFrame(update);
+}
+
+resetGame();
+update();
+</script>
+
 </body>
 </html>
