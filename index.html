@@ -55,8 +55,8 @@ const player = {
 
 let obstacles = [];
 const obstacleTypes = [
-    { type: 'spike', width: 30, height: 40, color: '#000000' },
-    { type: 'box', width: 45, height: 45, color: '#000000' }
+    { type: 'spike', width: 20, height: 30, color: '#000000' },
+    { type: 'box', width: 40, height: 40, color: '#000000' }
 ];
 let nextObstacleSpawnFrame = 0;
 
@@ -180,7 +180,7 @@ function drawScores() {
     ctx.shadowColor = "rgba(255, 255, 255, 0.8)";
     ctx.shadowBlur = 4;
 
-    ctx.fillText("SCORE: " + score, 25, 45);
+    ctx.fillText("SCORE: " + score, 35, 45);
 
     ctx.textAlign = "right";
     ctx.fillText("BEST: " + highScore, canvas.width - 25, 45);
